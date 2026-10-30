@@ -35,6 +35,17 @@ if ! node -e '
 fi
 echo "    Node.js ${current}"
 
+echo "==> Building native helpers (native/*.swift -> assets/)"
+if ! command -v swiftc >/dev/null 2>&1; then
+  echo "swiftc not found. Install Xcode Command Line Tools: xcode-select --install" >&2
+  exit 1
+fi
+for src in native/*.swift; do
+  name="$(basename "$src" .swift)"
+  swiftc -O -framework CoreWLAN -framework CoreLocation "$src" -o "assets/$name"
+  echo "    assets/$name"
+done
+
 echo "==> Installing npm packages"
 npm install
 
