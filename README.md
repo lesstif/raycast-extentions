@@ -10,6 +10,8 @@ You run setup once on each Mac, no matter how many modules there are.
 | --- | --- | --- | --- |
 | `audio` | Switch Audio Device | Select an attached device and switch output + input together. Devices in use are at the bottom. | `switchaudio-osx` |
 | `currency` | Convert Currency | Type an amount in the search bar: `1.3M`, `100k usd`, `$100k to krw`, `5000 won in usd`, `usd to krw`. Letters k/M/B/T, words like `million`, `bn`, and Korean units (`100만원`, `1억 5천만`, which mean KRW unless a currency is given) are understood. Copy, paste, or swap the result. | Network. Rates from [open.er-api.com](https://www.exchangerate-api.com) (free, daily), cached locally. |
+| `exchange-rates` | Browse Exchange Rates | Browse USD, EUR, JPY, CNY, and GBP prices in KRW with 1-month, 3-month, and 1-year trend charts. JPY is quoted per 100 yen. | Network. Free ECB daily reference rates via [Frankfurter](https://frankfurter.dev/), no API key. Saved rates work offline. |
+| `timezones` | Convert Time Zones | Compare linked city times with calendar/clock pickers, country flags, `City(Timezone)` labels, business-hour faces, and a bottom delete button in Delete Cities view. | Offline. Uses the runtime's IANA time-zone data; no API key or extra packages. |
 | `wifi` | Switch Wi-Fi | Known networks in range: 5 GHz (and 6 GHz) first, then strongest signal; the current network is at the bottom. ↵ connects. On the current network, ↵ reconnects so macOS picks the strongest AP (for two APs with the same SSID). See [Wi-Fi notes](#wi-fi-notes). | Xcode Command Line Tools (builds `native/wifi-helper.swift`) |
 | `dictionaries` | Search Dictionaries | Type an English word or phrase, choose Cambridge / Oxford / Merriam-Webster / Collins / Dictionary.com (English–English) or Naver (English–Korean), then press Enter to open the browser. | Browser and internet access; no API key or extra packages. |
 
@@ -75,6 +77,16 @@ Rules:
 - Modules do not import from other modules. Put shared code in `src/lib/`.
 - Use `findBinary()` from `src/lib/exec.ts` for command-line tools. Raycast does not load the shell PATH.
 
+### Command Icons
+
+Each command has a separate 512 × 512 PNG: headphones for audio, a dollar/circular arrow for
+currency conversion, a chart for exchange rates, a globe/clock for time zones, Wi-Fi waves,
+and a book for dictionaries. The extension itself uses a tools icon.
+The icons are bundled in `assets/` and require no downloads at runtime.
+To regenerate them on macOS, run `swift scripts/generate-command-icons.swift "$PWD"` from
+the repository root. Validate the manifest references and image sizes with `npm run test:icons`.
+Run `npm run dev` again to register changed command icons in Raycast.
+
 ## Wi-Fi notes
 
 - **Why a Swift helper.** macOS 14.4 removed the `airport` command. Only the CoreWLAN API can scan.
@@ -97,6 +109,149 @@ Rules:
   The list shows `Stronger AP +N dB` when another AP of the current SSID is much stronger.
 - **Connect uses the keychain.** The saved password is used. If a join fails every time for one network
   (the router refuses, or the password changed), connect once from the Wi-Fi menu to save it again.
+
+## Browse Exchange Rates
+
+Run `npm run dev` to register the new command, then open **Browse Exchange Rates** in Raycast.
+It is part of **Lesstif Tools**, alongside the existing Convert Currency command.
+
+- Select USD (US dollar), EUR (euro), JPY (Japanese yen), CNY (Chinese yuan), or GBP (British pound).
+- The list and chart show **KRW per 1 foreign currency unit**, except **JPY per 100 yen**, following the usual Korean quote convention. The yen detail also shows the price of one yen.
+- Use the **Trend Period** dropdown for 1 Month (30 days), 3 Months (90 days), or 1 Year (365 days).
+- The detail shows the latest published price and date, a trend chart, period high/low, period change, and change since the previous publication.
+- An upward chart means the foreign currency costs more won, not that KRW is strengthening.
+- Press **⌘C** to copy the selected exchange rate, or **⌘R** to refresh.
+
+Rates come from the European Central Bank through Frankfurter. They are **daily reference rates, not live prices or bank buy/sell quotes**.
+Weekends and ECB holidays use the most recent publication; its date is always displayed.
+The command loads a year of history in one request, caches it for one hour, and switches chart periods locally.
+If a refresh fails, saved rates and charts remain visible with a warning and their original reference date.
+Charts are generated locally, without a third-party chart service or extra packages.
+The existing currency converter uses a different daily rate source, so its rates can differ slightly.
+
+Validate with `npm run test:exchange-rates`, `npm run typecheck`, and `npm run build`.
+In Raycast, manually check all five currencies, each chart period, search, copy, refresh, and the saved-data warning after disconnecting from the network.
+
+## Convert Time Zones
+
+Run `npm run dev`, then open **Convert Time Zones** in Raycast.
+It is part of Lesstif Tools; the other commands remain available.
+The interface, weekday names, validation messages, and copied times use English.
+Korean search aliases and user-provided city names are still supported.
+
+### Compare and Edit Times
+
+1. The default cities are **New York, Seoul, and San Francisco**.
+2. Search the entire offline database directly from the main search bar.
+   Search by English or Korean city/country names (`London`, `런던`, `부산`),
+   abbreviations (`KST`, `PST`), full time-zone names (`Pacific Standard Time`),
+   or IANA names (`Asia/Tokyo`).
+3. Select a result under **City and Time-Zone Results** and press **Enter** to add it.
+   Use **⌘N** or the **Add or Search Cities** action to browse the database.
+   **Add a Custom City** lets you provide a name and select its IANA time zone.
+4. In **Compare Times**, select a saved city and press **Enter** to open the clock editor directly.
+   The list header always shows **↵ Edit Time · ⌘D Edit Date**, including while searching.
+   Use the **Hour (24-hour)** / **Minute** dropdowns, without typing or visiting the calendar first.
+   **Edit City** switches which city's local time you are changing, without changing the shared instant.
+   All city previews and business-hour indicators update as soon as the selection is valid.
+5. Click **Apply Times to All Cities** (or **⌘↵**) to apply, or **Esc** to cancel.
+6. To change only the date, select a saved city in the main list and press **⌘D** or use **Edit Date**.
+   A **monthly calendar** opens, with seven columns from Sunday to Saturday.
+   Click the compact **Previous** / **Next** controls once (or use **⌘←** / **⌘→**) and **Today** to navigate.
+   **Selected Date**, immediately beside **Next**, shows the highlighted month/day and year.
+   The fixed month/year dropdown also offers **Previous Month**, **Next Month**, **Today**, and year selection.
+   Only the weeks needed by each month are shown. Initial focus stays on the top-row **Selected Date**
+   card so opening the calendar or changing months does not scroll the navigation out of view.
+   Select a day, then click **Choose Date** or press Enter to apply it and return directly to the list.
+   The selected city's hour and minute are preserved; all other cities update to the same instant.
+   Esc cancels without changes. A DST gap is rejected; a repeated time offers explicit earlier/later choices.
+   Within the clock editor, **Date → Open Monthly Calendar…** or **⌘D** changes the draft date instead;
+   returning from that calendar still requires **Apply Times to All Cities** to commit the draft.
+
+Native Raycast lists cannot give the date and time text inside one row separate click handlers.
+City rows therefore stay as one row, with visible Enter/⌘D guidance instead of pretending those labels are buttons.
+
+The calendar date and clock selections use the selected city's time zone, not your Mac's.
+Calendar days use UTC-only date arithmetic, separate from the clock, so the Mac's DST
+transitions cannot silently shift another city's chosen time. The calendar uses native Raycast
+Grid items and locally generated, theme-aware day images; no browser or calendar permissions are needed.
+Blue marks the highlighted date and a teal outline marks today in the edited city's time zone.
+
+City rows show a flag and **City(Timezone)**, for example **🇰🇷 Seoul(KST)**,
+**🇮🇩 Jakarta(WIB)**, or **🇵🇭 Manila(PHT)**.
+The displayed abbreviation follows the selected date, such as **New York(EST)** in winter
+and **New York(EDT)** during daylight saving time.
+Each row also shows the local date, English weekday, time, UTC offset, and business-hour face.
+Known cities use bundled country codes. Other regions use macOS's public-domain IANA
+`/usr/share/zoneinfo/zone.tab` country table when available.
+UTC and regions with no known country use a globe instead of an invented flag.
+Previously saved city lists do not need to be reset to show flags.
+
+**⌘C** copies one city's time; **⌘⇧C** copies every city.
+The action menu also offers **One Hour Earlier** and **One Hour Later**.
+
+### Add, Replace, and Delete Cities
+
+- **Add:** Search on the main screen and press Enter, or use **⌘N** / the **Add or Search Cities** action.
+- **Replace:** Select a saved city and press **⌘E**. In the **Manage Cities** view,
+  Enter opens the replacement picker. Choose another city, or use **Edit Name and Time Zone**.
+  Replacement preserves the city's position, all other saved cities, and the selected instant.
+- **Delete with a click:** Select **Delete Cities** in the view dropdown, select a saved city,
+  then click **Delete City** in Raycast's bottom bar. You do not need to open the action menu.
+  Deletion affects only that selected city and saves immediately; Enter also triggers the button.
+  Select **Compare Times** in the dropdown to return to editing.
+  City rows keep their flags, without decorative trash icons that look like buttons.
+  In other views, **⌘⇧D** and the **Delete City** action remain available.
+  Raycast exposes one primary bottom-bar button, so it shows **Edit Time** in Compare Times
+  and **Delete City** in Delete Cities, rather than two independent permanent buttons.
+- The list shows only cities and search results, without a separate **City Controls** section.
+  Controls remain available in the action menu and through keyboard shortcuts.
+- Changes are saved automatically. You can remove every city and still search/add new ones.
+  Different cities sharing the same time zone can be saved together.
+
+The bundled city, country, and alias database lives in `src/modules/timezones/cities.ts`
+(`CITY_ROWS` and `TIME_ZONE_NAMES`), supplemented by the runtime's full IANA region list.
+Ambiguous abbreviations such as `IST` and `CST` can return multiple countries.
+Check the IANA name before adding; conversion always uses that region's date-specific rules,
+not a fixed offset inferred from a search alias.
+
+City selections persist on this Mac. The command starts at the current time and updates automatically.
+Editing a time freezes the comparison at that instant. **⌘R** restores current time and automatic updates.
+The selected instant itself is not saved.
+
+### Business Hours and Daylight Saving
+
+- Business hours default to **Monday-Friday, 09:00 inclusive to 18:00 exclusive**, in each city's local time.
+- **🙂 Working Hours:** within the configured working schedule.
+- **😐 Non-Working Hours:** outside the working schedule, but not sleeping hours (including daytime weekends by default).
+- **☹️ Sleeping Hours:** **00:00 inclusive to 07:00 exclusive**, every day in each city's local time.
+  Sleeping hours take priority if the working schedule overlaps them.
+- Hover over a face in saved-city rows or search results to see the state, local date/time,
+  IANA time zone, working schedule, and sleeping-hour rule. Editor previews and copied comparisons use the same faces.
+- **Configure Business Hours (⌘,)** changes the shared local start/end time and weekend setting.
+  `24:00` is allowed as the end time. Overnight schedules and public holidays are not supported.
+- Conversion handles date boundaries, regional DST rules, and half-hour/quarter-hour offsets.
+- A skipped local time produces an error instead of silently moving the time.
+  For a repeated local time, use **Repeated Local Time** to choose **Earlier** or **Later**.
+  An invalid selection leaves the previews at the last valid instant and cannot be applied.
+- Input years range from **1900 to 2100**. Rules come from the runtime's IANA database;
+  a Raycast runtime update may be needed after governments change time-zone rules.
+
+### Validation
+
+```sh
+npm run test:timezones
+npm run typecheck
+npm run build
+```
+
+Tests cover monthly grids, leap years, month/year navigation, supported-year limits,
+calendar/clock selections across Mac time zones, database search, saved-list changes, duplicate prevention, flag metadata,
+English UI strings, date-specific abbreviations, date boundaries, leap years,
+skipped/repeated local times, half-hour DST changes, working/non-working/sleeping boundaries, tooltips, and copying times.
+In Raycast, manually check flags and labels, selecting a row and clicking the bottom **Delete City** button,
+all three views, face tooltips on saved cities and search results, search/add/replace, persistence, month navigation and date selection, clock editing, DST selection,
+cancel, copy, and resetting to the current time.
 
 ## Search Dictionaries
 
@@ -139,7 +294,7 @@ npm run dev
 
 `npm run test:dictionaries`는 Node의 테스트 도구로 여섯 사전 구성, URL 인코딩,
 빈 입력, Collins의 영어 사전 선택, Naver의 `#/search` 경로를 확인합니다.
-`npm run typecheck`는 프로젝트 전체의 타입을 검사하고 `npm run build`는 네 명령을 빌드합니다.
+`npm run typecheck`는 프로젝트 전체의 타입을 검사하고 `npm run build`는 모든 명령을 빌드합니다.
 자동 테스트는 실제 사이트 응답이나 Raycast 화면을 확인하지 않으므로 아래 항목도 수동 확인하세요.
 
 - `incumbent`를 입력해도 사전 여섯 개가 모두 보이는지 확인합니다.

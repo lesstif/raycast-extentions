@@ -3,7 +3,7 @@
   "name": "lesstif-tools",
   "title": "Lesstif Tools",
   "description": "Personal Raycast tools. Each module is one or more commands.",
-  "icon": "extension-icon.png",
+  "icon": "tools-icon.png",
   "author": "lesstif",
   "categories": [
     "Productivity",
@@ -13,6 +13,7 @@
   "commands": [
     {
       "name": "switch-audio",
+      "icon": "audio-icon.png",
       "title": "Switch Audio Device",
       "subtitle": "Audio",
       "description": "Select an attached audio device and switch output and input together. Devices in use are at the bottom.",
@@ -30,6 +31,7 @@
     },
     {
       "name": "convert-currency",
+      "icon": "currency-icon.png",
       "title": "Convert Currency",
       "subtitle": "Currency",
       "description": "Convert amounts written like 1.3M, 100k usd, $100k to krw, or 1억 5천만. Rates from open.er-api.com, cached for a day.",
@@ -54,7 +56,51 @@
       ]
     },
     {
+      "name": "browse-exchange-rates",
+      "icon": "exchange-rates-icon.png",
+      "title": "Browse Exchange Rates",
+      "subtitle": "Currency · KRW",
+      "description": "Browse USD, EUR, JPY, CNY, and GBP prices in Korean won with daily reference rates and 1-month, 3-month, or 1-year trend charts.",
+      "mode": "view"
+    },
+    {
+      "name": "convert-timezones",
+      "icon": "timezones-icon.png",
+      "title": "Convert Time Zones",
+      "subtitle": "World Clock",
+      "description": "Compare linked city times with separate time/date editing and smiling, neutral, or frowning indicators for working, non-working, and sleeping hours. Works offline with daylight-saving support.",
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "workStart",
+          "title": "Business Hours Start",
+          "description": "Local time in each city, in 24-hour HH:mm format.",
+          "type": "textfield",
+          "required": false,
+          "default": "09:00"
+        },
+        {
+          "name": "workEnd",
+          "title": "Business Hours End",
+          "description": "Exclusive end time in each city, in HH:mm format (24:00 is allowed). Must be later than the start.",
+          "type": "textfield",
+          "required": false,
+          "default": "18:00"
+        },
+        {
+          "name": "includeWeekends",
+          "title": "Include Weekends",
+          "description": "Treat Saturday and Sunday as working days too. National holidays are not checked.",
+          "type": "checkbox",
+          "label": "Use the same business hours on weekends",
+          "required": false,
+          "default": false
+        }
+      ]
+    },
+    {
       "name": "switch-wifi",
+      "icon": "wifi-icon.png",
       "title": "Switch Wi-Fi",
       "subtitle": "Wi-Fi",
       "description": "List known Wi-Fi networks in range: 5 GHz first, then strongest signal. Enter connects. The current network is at the bottom.",
@@ -80,6 +126,7 @@
     },
     {
       "name": "search-dictionaries",
+      "icon": "dictionaries-icon.png",
       "title": "Search Dictionaries",
       "subtitle": "Dictionaries",
       "description": "Look up an English word or phrase in Cambridge, Oxford, Merriam-Webster, Collins, Dictionary.com, or Naver English Dictionary.",
@@ -98,6 +145,9 @@
     "dev": "ray develop",
     "build": "ray build -e dist",
     "typecheck": "tsc --noEmit",
-    "test:dictionaries": "node --experimental-strip-types --test tests/dictionaries.test.mjs"
+    "test:dictionaries": "node --experimental-strip-types --test tests/dictionaries.test.mjs",
+    "test:exchange-rates": "node --experimental-strip-types --test tests/exchange-rates.test.mjs",
+    "test:timezones": "node --experimental-strip-types --test tests/timezones.test.mjs tests/timezones-ui.test.mjs",
+    "test:icons": "node --test tests/icons.test.mjs"
   }
 }
